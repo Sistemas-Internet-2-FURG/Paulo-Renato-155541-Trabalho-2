@@ -116,3 +116,4 @@
 /Users/seven/Documents/Projects/FURG/Ano2/SPI/BlogSPI/BlogSPI/obj/Debug/net8.0/BlogSPI.pdb
 /Users/seven/Documents/Projects/FURG/Ano2/SPI/BlogSPI/BlogSPI/obj/Debug/net8.0/BlogSPI.genruntimeconfig.cache
 /Users/seven/Documents/Projects/FURG/Ano2/SPI/BlogSPI/BlogSPI/obj/Debug/net8.0/ref/BlogSPI.dll
+/Users/seven/Documents/Projects/FURG/Ano2/SPI/BlogSPI/BlogSPI/obj/Debug/net8.0/BlogSPI.sourcelink.json

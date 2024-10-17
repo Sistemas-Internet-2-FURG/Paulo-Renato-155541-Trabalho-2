@@ -20,6 +20,8 @@ function router() {
     
     if (path === '/posts') {
         fetchPosts();
+    } else if (path === '/edit-post') {
+        setTimeout(populateEditForm, 0);
     }
 }
 
@@ -238,29 +240,27 @@ async function handleSignup(event) {
     const formData = new FormData(event.target);
     const data = Object.fromEntries(formData.entries());
 
-    console.log('Attempting to signup in with data:', data);
+    console.log('Attempting to signup with data:', data);
     console.log('Sending request to:', `${BASE_URL}/api/auth/signup`);
     try {
-      const response = await fetch(`${BASE_URL}/api/auth/signup`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      })
-      console.log("FOiiiiii")
+        const response = await fetch(`${BASE_URL}/api/auth/signup`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+        });
 
-      if (!response.status === 201) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-      } else {
-        alert('Signup successful');
-      }
-
+        if (response.status !== 201) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        } else {
+            alert('Signup successful');
+            navigate({ target: { getAttribute: () => '/api/auth/signin' } });
+        }
     } catch (error) {
         console.error('Signup error:', error);
-        alert('An error occurred during signup. Please try againnn.');
+        alert('An error occurred during signup. Please try again.');
     }
-    
 }
 
 function handleNewPost(event) {
@@ -284,6 +284,7 @@ function handleNewPost(event) {
     })
     .catch(error => {
         console.error('New post error:', error);
+        alert('An error occurred while creating the post. Please try again.');
     });
 }
 
@@ -349,26 +350,56 @@ async function deletePost(id) {
 
 async function editPost(id) {
     try {
+        console.log(`Attempting to fetch post with id: ${id}`);
+        console.log(`Sending request to: ${BASE_URL}/api/post/${id}`);
+        
         const response = await fetch(`${BASE_URL}/api/post/${id}`, {
             headers: {
                 'Authorization': `Bearer ${authToken}`
             }
         });
+        
+        console.log(`Response status: ${response.status}`);
+        
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        const post = await response.json();
         
-        // Navigate to edit post page and populate form
-        navigate({ target: { getAttribute: () => '/edit-post' } });
-        setTimeout(() => {
-            document.getElementById('post-id').value = post.id;
-            document.getElementById('post-title').value = post.title;
-            document.getElementById('post-content').value = post.content;
-        }, 100);
+        const post = await response.json();
+        console.log('Fetched post data:', post);
+        
+        // Store the post data in sessionStorage
+        sessionStorage.setItem('editPostData', JSON.stringify(post));
+        
+        // Navigate to edit post page
+        window.history.pushState({}, '', '/edit-post');
+        router();
     } catch (error) {
         console.error('Error fetching post for edit:', error);
         alert('Failed to load post for editing. Please try again.');
+    }
+}
+
+function populateEditForm() {
+    const postData = JSON.parse(sessionStorage.getItem('editPostData'));
+    if (postData) {
+        const postIdInput = document.getElementById('post-id');
+        const postTitleInput = document.getElementById('post-title');
+        const postContentInput = document.getElementById('post-content');
+        
+        if (postIdInput && postTitleInput && postContentInput) {
+            postIdInput.value = postData.id;
+            postTitleInput.value = postData.title;
+            postContentInput.value = postData.content;
+            console.log('Form populated with post data');
+        } else {
+            console.error('One or more form elements not found');
+            console.log('postIdInput:', postIdInput);
+            console.log('postTitleInput:', postTitleInput);
+            console.log('postContentInput:', postContentInput);
+        }
+    } else {
+        console.error('No post data found in sessionStorage');
     }
 }
 
@@ -376,6 +407,8 @@ async function handleEditPost(event) {
     event.preventDefault();
     const formData = new FormData(event.target);
     const data = Object.fromEntries(formData.entries());
+
+    console.log('Attempting to update post with data:', data);
 
     try {
         const response = await fetch(`${BASE_URL}/api/post/${data.id}`, {
@@ -386,14 +419,23 @@ async function handleEditPost(event) {
             },
             body: JSON.stringify(data)
         });
+
+        console.log(`Response status: ${response.status}`);
+
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
+
+        const result = await response.json();
+        console.log('Edit post result:', result);
+
         alert('Post updated successfully');
-        navigate({ target: { getAttribute: () => '/posts' } });
+        sessionStorage.removeItem('editPostData');
+        window.history.pushState({}, '', '/posts');
+        router();
     } catch (error) {
         console.error('Error updating post:', error);
-        alert('Failed to update post. Please try again.');
+        alert(`Failed to update post. Error: ${error.message}`);
     }
 }
 
